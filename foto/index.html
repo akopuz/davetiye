@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --sage-green: #a3ad99; 
+            --bg-outer: #edece9; /* Çerçeve dışı */
+            --bg-inner: #F8F7F3; /* Formun içi */
+            --text: #5d5d5d; 
+        }
+        
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background-color: var(--bg-outer); 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; padding: 20px;
+        }
+        
+        .main-container { 
+            background: var(--bg-inner); 
+            padding: 40px; 
+            border-radius: 30px; 
+            width: 100%; max-width: 400px; 
+            text-align: center; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #e2e0dc;
+        }
+        
+        .logo-container img { max-width: 180px; margin-bottom: 10px; }
+        
+        h1 { font-family: 'Dancing Script', cursive; color: var(--sage-green); font-size: 2.2rem; margin: 5px 0; }
+        .date { font-family: 'Playfair Display', serif; color: var(--text); font-size: 1.1rem; margin-bottom: 20px; opacity: 0.8; }
+        
+        p { color: var(--text); font-size: 0.85rem; margin-bottom: 25px; line-height: 1.6; padding: 0 10px; }
+        
+        input[type="text"], input[type="file"] { 
+            width: 100%; padding: 12px; margin-bottom: 15px; 
+            border: 1px solid #dcd8d0; border-radius: 10px; background: white; 
+            box-sizing: border-box;
+        }
+        
+        button { 
+            background: var(--sage-green); color: white; border: none; 
+            padding: 14px 30px; border-radius: 50px; cursor: pointer; 
+            font-family: 'Playfair Display', serif; font-size: 1.1rem; transition: 0.3s;
+        }
+        
+        #progressArea { display: none; margin-top: 20px; }
+        #progressBar { width: 100%; height: 6px; background: #e2e0dc; border-radius: 3px; overflow: hidden; }
+        #progressFill { width: 0%; height: 100%; background: var(--sage-green); transition: 0.3s; }
+        #countText { font-size: 0.8rem; color: var(--sage-green); margin-top: 8px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="main-container" id="app">
+    <div class="logo-container">
+        <img src="logo.png" alt="Logo">
+    </div>
+    
+    <h1>Nişanımıza Hoş Geldiniz</h1>
+    <div class="date">31.07.2026</div>
+    
+    <p>Çektiğiniz fotoğraf ve videoları bizimle paylaşarak bu özel günümüzü unutulmaz kılmamıza yardımcı olabilirsiniz.</p>
+    
+    <form id="uploadForm">
+        <input type="text" id="userName" placeholder="İsminiz" required>
+        <input type="file" id="fileInput" accept="image/*,video/*" multiple required>
+        <button type="submit" id="submitBtn">YÜKLE</button>
+    </form>
+    
+    <div id="progressArea">
+        <div id="progressBar"><div id="progressFill"></div></div>
+        <div id="countText">Hazırlanıyor...</div>
+    </div>
+</div>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzPZrvIhGMtIjiWQcFNtvn-IZrj796uNbjWSNyFa64sfy_R1l3U8qN4u8EgNffRUkzb/exec';
+    const form = document.getElementById('uploadForm');
+    const app = document.getElementById('app');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const files = document.getElementById('fileInput').files;
+        if(files.length > 50) return alert('En fazla 50 dosya yükleyebilirsiniz!');
+
+        form.style.display = 'none';
+        document.getElementById('progressArea').style.display = 'block';
+
+        for (let i = 0; i < files.length; i++) {
+            document.getElementById('countText').innerText = `${i + 1} / ${files.length} TAMAMLANDI`;
+            document.getElementById('progressFill').style.width = ((i + 1) / files.length) * 100 + '%';
+            
+            const base64 = await toBase64(files[i]);
+            await fetch(scriptURL, { method: 'POST', body: new URLSearchParams({
+                userName: document.getElementById('userName').value,
+                fileData: base64, mimeType: files[i].type, filename: files[i].name
+            })});
+        }
+        
+        app.innerHTML = `<h2 style="font-family:'Playfair Display', serif; color:#5d5d5d;">Teşekkür Ederiz!</h2><p>Anılarınızı bizimle paylaştığınız için çok mutlu olduk!</p><button onclick="location.reload()">Yeni Yükleme Yap</button>`;
+    });
+
+    const toBase64 = file => new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+    });
+</script>
+</body>
+</html>
