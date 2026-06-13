@@ -35,7 +35,7 @@
     <h1>Nişanımıza Hoş Geldiniz</h1>
     <div class="date">31.07.2026</div>
     
-    <p>Çektiğiniz fotoğraf ve videoları bizimle paylaşarak bu özel günümüzü unutulmaz kılmamıza yardımcı olabilirsiniz. </p>
+    <p>Çektiğiniz fotoğraf ve videoları bizimle paylaşarak bu özel günümüzü unutulmaz kılmamıza yardımcı olabilirsiniz. (Hızlı yükleme için en fazla 50 adet seçiniz.)</p>
     
     <form id="uploadForm">
         <input type="text" id="userName" placeholder="Adınız Soyadınız" required>
@@ -50,46 +50,46 @@
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbz_yJllCcd7B1Z49GgcAWd8pJkMXQog6BadQFBtVsjMBatH5mV1K2w1sRV4UNA4Nkwx/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzEMPM0rt4DAgclhvYJDUvW3te8dltHj60eCYl-JjkkWYWMxTzod2yHs0-P-O8Nyi9O/exec';
     const form = document.getElementById('uploadForm');
     const app = document.getElementById('app');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const files = document.getElementById('fileInput').files;
+        const files = Array.from(document.getElementById('fileInput').files);
+        const userName = document.getElementById('userName').value;
         if(files.length > 50) return alert('En fazla 50 dosya yükleyebilirsiniz!');
 
         form.style.display = 'none';
         document.getElementById('progressArea').style.display = 'block';
 
         let completed = 0;
-        const uploadPromises = Array.from(files).map(async (file) => {
-            const base64 = await toBase64(file);
-            const response = await fetch(scriptURL, { 
-                method: 'POST', 
-                body: new URLSearchParams({
-                    userName: document.getElementById('userName').value,
-                    fileData: base64, 
-                    mimeType: file.type, 
-                    filename: file.name,
-                    referer: window.location.href
-                })
-            });
+        
+        // FormData ile hızlı paralel yükleme
+        const uploadPromises = files.map(async (file) => {
+            const formData = new FormData();
+            formData.append('userName', userName);
+            formData.append('file', file);
+            formData.append('filename', file.name);
+            formData.append('referer', window.location.href);
+
+            try {
+                await fetch(scriptURL, { 
+                    method: 'POST', 
+                    body: formData 
+                });
+            } catch (err) {
+                console.error("Yükleme hatası:", err);
+            }
+
             completed++;
             document.getElementById('countText').innerText = `${completed} / ${files.length} TAMAMLANDI`;
             document.getElementById('progressFill').style.width = (completed / files.length) * 100 + '%';
-            return response;
         });
 
         await Promise.all(uploadPromises);
-        
-        app.innerHTML = `<h2 style="font-family:'Playfair Display', serif; color:#5d5d5d;">Teşekkür Ederiz!</h2><p>Anılarınızı bizimle paylaştığınız için çok mutlu olduk!</p><button onclick="location.reload()">Yeni Yükleme Yap</button>`;
-    });
 
-    const toBase64 = file => new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(file);
+        app.innerHTML = `<h2 style="font-family:'Playfair Display', serif; color:#5d5d5d;">Teşekkür Ederiz!</h2><p>Anılarınızı bizimle paylaştığınız için çok mutlu olduk!</p><button onclick="location.reload()">Yeni Yükleme Yap</button>`;
     });
 </script>
 </body>
